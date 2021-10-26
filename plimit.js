@@ -11,19 +11,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 
 class Node {
-  value;
-  next;
-
   constructor(value) {
     this.value = value;
   }
 }
 
 class Queue {
-  #head;
-  #tail;
-  #size;
-
   constructor() {
     this.clear();
   }

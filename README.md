@@ -24,7 +24,7 @@ if(NOT deps-spirv-generate_POPULATED)
 endif()
 ```
 
-And then, use macro **add_shaders** to make shaders build:
+And then, use macro `add_shaders` to make shaders build:
 
 ```cmake
 add_shaders(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
