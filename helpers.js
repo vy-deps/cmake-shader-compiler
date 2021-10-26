@@ -37,13 +37,11 @@ const spawnChildProcess = (exe, args) =>
     // proc.stdout.on("data", (data) => {
     //   process.stdout.write(`[stdout] ${data}`);
     // });
-    if (!proc.stderr) {
-      console.dir(proc);
-      reject(new Error('something strange with process spawn!'));
+    if (proc.stderr) {
+      proc.stderr.on("data", (data) => {
+        process.stderr.write(`[stderr] ${data}`);
+      });
     }
-    proc.stderr.on("data", (data) => {
-      process.stderr.write(`[stderr] ${data}`);
-    });
     proc.on("close", (code) => {
       if (code !== 0) {
         reject(new Error(`process ${exe} exited with code ${code}`));
