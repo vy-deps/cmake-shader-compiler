@@ -24,40 +24,40 @@ class Queue {
   enqueue(value) {
     const node = new Node(value);
 
-    if (this.#head) {
-      this.#tail.next = node;
-      this.#tail = node;
+    if (this._head) {
+      this._tail.next = node;
+      this._tail = node;
     } else {
-      this.#head = node;
-      this.#tail = node;
+      this._head = node;
+      this._tail = node;
     }
 
-    this.#size++;
+    this._size++;
   }
 
   dequeue() {
-    const current = this.#head;
+    const current = this._head;
     if (!current) {
       return;
     }
 
-    this.#head = this.#head.next;
-    this.#size--;
+    this._head = this._head.next;
+    this._size--;
     return current.value;
   }
 
   clear() {
-    this.#head = undefined;
-    this.#tail = undefined;
-    this.#size = 0;
+    this._head = undefined;
+    this._tail = undefined;
+    this._size = 0;
   }
 
   get size() {
-    return this.#size;
+    return this._size;
   }
 
   *[Symbol.iterator]() {
-    let current = this.#head;
+    let current = this._head;
 
     while (current) {
       yield current.value;
