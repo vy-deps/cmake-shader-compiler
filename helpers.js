@@ -15,6 +15,41 @@ function cleanup() {
   }
 }
 
+let vulkanSdkPath = null;
+
+function resolveVulkanTool({ name, isOptional }) {
+  if (!vulkanSdkPath) {
+    vulkanSdkPath = __dirname;
+    if (process.env.VULKAN_SDK) {
+      const vulkanBin = path.join(process.env.VULKAN_SDK, "Bin");
+      if (fs.existsSync(vulkanBin)) {
+        vulkanSdkPath = vulkanBin;
+      } else {
+        console.warn(
+          `VULKAN_SDK environment variable is set but not contains Bin path...`
+        );
+      }
+    } else {
+      console.warn(`VULKAN_SDK environment variable not set`);
+    }
+  }
+  const tryPaths = [
+    path.join(vulkanSdkPath, name),
+    path.join(vulkanSdkPath, name + ".exe"),
+  ];
+  for (const p of tryPaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+  if (isOptional) {
+    return null;
+  }
+  throw new Error(
+    `vulkan tool ${name} not found! please install vulkan sdk or check environment variable VULKAN_SDK to be correct path!`
+  );
+}
+
 function tmpFile(ext) {
   const now = new Date();
   const yyyy = now.getFullYear();
@@ -103,6 +138,7 @@ async function withLimitNumCpu(jobs) {
 module.exports = {
   cleanup,
   tmpFile,
+  resolveVulkanTool,
   spawnChildProcess,
   readAsJson,
   mainWrapper,

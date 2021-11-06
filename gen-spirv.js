@@ -4,51 +4,17 @@ const {
   spawnChildProcess,
   readAsCppBytesArray,
   readAsJson,
+  resolveVulkanTool,
   writeFileStr,
   filenameToIdentifier,
   withLimitNumCpu,
 } = require("./helpers");
 const path = require("path");
-const fs = require("fs");
 
 const spvColumns = 16;
 const spvIndent = 2;
-const glslang = path.join(resolveBinPath(), resolveGlslangName());
-const spirvCross = resolveSpirvCross();
-
-function resolveBinPath() {
-  if (process.env.VULKAN_SDK) {
-    const vulkanBin = path.join(process.env.VULKAN_SDK, "Bin");
-    if (fs.existsSync(vulkanBin)) {
-      return vulkanBin;
-    }
-  }
-  return __dirname;
-}
-
-function resolveGlslangName() {
-  if (process.platform === "win32") {
-    return "glslangValidator.exe";
-  } else if (process.platform === "linux") {
-    return "glslangValidator";
-  } else {
-    throw new Error("not implemented for non win32/linux system");
-  }
-}
-
-function resolveSpirvCross() {
-  const tryPaths = [
-    path.join(resolveBinPath(), "spirv-cross"),
-    path.join(resolveBinPath(), "spirv-cross.exe"),
-  ];
-  for (const p of tryPaths) {
-    if (fs.existsSync(p)) {
-      console.log(`found linter ${p}`);
-      return p;
-    }
-  }
-  return null;
-}
+const glslang = resolveVulkanTool({ name: "glslangValidator" });
+const spirvCross = resolveVulkanTool({ name: "spirv-cross", isOptional: true });
 
 function formatSpv(spv) {
   const lines = [];
@@ -95,10 +61,7 @@ async function genSpirv(inputPath, type) {
       process.stdout.write(`[spirvCross] ${line}`);
     }
     const data = await readAsJson(reflectTmpOut, "utf-8");
-    console.log(
-      `tmp file contents: %s`,
-      JSON.stringify(data, null, 2)
-    );
+    console.log(`tmp file contents: %s`, JSON.stringify(data, null, 2));
   }
   const sprv = await readAsCppBytesArray(tmpOutput);
   sprvs.push({ identifier, sprv });
@@ -110,8 +73,8 @@ async function writeSpirv(dir) {
   for (const { identifier, sprv } of sprvs) {
     const spirvFormatted = formatSpv(sprv);
     shaders.push({
-      header: `  extern std::array<uint8_t, ${sprv.length}> g_${identifier};`,
-      impl: `std::array<uint8_t, ${sprv.length}> shaders::g_${identifier}{
+      header: `  extern uint8_t g_${identifier}[ ${sprv.length} ];`,
+      impl: `uint8_t shaders::g_${identifier}[  ${sprv.length} ] = {
 ${spirvFormatted}
 };`,
     });
@@ -119,7 +82,6 @@ ${spirvFormatted}
   await writeFileStr(
     path.join(dir, "shaders.hpp"),
     `#pragma once
-#include <array>
 #include <cstdint>
 
 namespace shaders {
@@ -145,6 +107,6 @@ mainWrapper(async (args) => {
   await writeSpirv(dir);
 
   // for (const file of args) {
-  //   await genSpirv(file);
+  //   await genSpirv(file, type);
   // }
 });

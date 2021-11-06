@@ -40,9 +40,9 @@ shaders.cpp
 shaders.hpp
 ```
 
-Don't add it to cmake project sources, because macro `add_opengl_shaders` already does that.
-
+Don't add it to cmake project sources, because macro `add_opengl_shaders`/`vulkan-shaders` already does that.
 Just include `shaders.hpp` in any file which needs shaders binary code, and use it!
+Also you might want to add these cpp/hpp files to your git ignore file.
 
 ## Thirdparty
 
