@@ -4,7 +4,7 @@ CMake stuff to generate spirv for shaders into shaders.cpp/hpp files.
 
 ## Requirements
 
-Scripts require **nodejs** to be installed.
+Scripts require [nodejs](https://nodejs.org/en/download/) and [vulkan sdk](https://vulkan.lunarg.com/) to be installed.  
 
 ## Usage
 
