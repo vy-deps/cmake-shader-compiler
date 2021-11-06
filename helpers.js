@@ -43,7 +43,13 @@ const spawnChildProcess = (exe, args) =>
     }
     proc.on("close", (code) => {
       if (code !== 0) {
-        reject(new Error(`process ${exe} exited with code ${code}\noutput was: ${output.join('\n')}`));
+        reject(
+          new Error(
+            `process ${exe} exited with code ${code}\noutput was: ${output.join(
+              "\n"
+            )}`
+          )
+        );
       } else {
         // console.log(`process ${exe} exit ok!`);
         resolve(output);
@@ -62,6 +68,11 @@ async function readAsCppBytesArray(filepath) {
 
 async function writeFileStr(filepath, str) {
   await fsp.writeFile(filepath, str, "utf-8");
+}
+
+async function readAsJson(filepath) {
+  const buf = await fsp.readFile(filepath, "utf-8");
+  return JSON.parse(buf);
 }
 
 function filenameToIdentifier(name) {
@@ -85,7 +96,7 @@ function mainWrapper(func) {
 
 async function withLimitNumCpu(jobs) {
   const limit = pLimit(os.cpus().length);
-  const promises = jobs.map(job => limit(job));
+  const promises = jobs.map((job) => limit(job));
   await Promise.all(promises);
 }
 
@@ -93,6 +104,7 @@ module.exports = {
   cleanup,
   tmpFile,
   spawnChildProcess,
+  readAsJson,
   mainWrapper,
   readAsCppBytesArray,
   writeFileStr,

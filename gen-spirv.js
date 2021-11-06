@@ -3,6 +3,7 @@ const {
   tmpFile,
   spawnChildProcess,
   readAsCppBytesArray,
+  readAsJson,
   writeFileStr,
   filenameToIdentifier,
   withLimitNumCpu,
@@ -13,13 +14,13 @@ const fs = require("fs");
 const spvColumns = 16;
 const spvIndent = 2;
 const glslang = path.join(resolveBinPath(), resolveGlslangName());
-const linter = resolveLinter();
+const spirvCross = resolveSpirvCross();
 
 function resolveBinPath() {
   if (process.env.VULKAN_SDK) {
-    const vulkanSDKPath = process.env.VULKAN_SDK;
-    if (fs.existsSync(vulkanSDKPath)) {
-      return vulkanSDKPath;
+    const vulkanBin = path.join(process.env.VULKAN_SDK, "Bin");
+    if (fs.existsSync(vulkanBin)) {
+      return vulkanBin;
     }
   }
   return __dirname;
@@ -35,10 +36,10 @@ function resolveGlslangName() {
   }
 }
 
-function resolveLinter() {
+function resolveSpirvCross() {
   const tryPaths = [
-    path.join(resolveBinPath(), "spirv-lint"),
-    path.join(resolveBinPath(), "spirv-lint.exe"),
+    path.join(resolveBinPath(), "spirv-cross"),
+    path.join(resolveBinPath(), "spirv-cross.exe"),
   ];
   for (const p of tryPaths) {
     if (fs.existsSync(p)) {
@@ -82,11 +83,22 @@ async function genSpirv(inputPath, type) {
     "-o",
     tmpOutput,
   ]);
-  if (linter) {
-    const lintOut = await spawnChildProcess(linter, [tmpOutput]);
-    for (const line of lintOut) {
-      process.stdout.write(`[linter] ${line}`);
+  if (spirvCross) {
+    const reflectTmpOut = tmpFile(".json");
+    const spirvCrossOut = await spawnChildProcess(spirvCross, [
+      tmpOutput,
+      "--reflect",
+      "--output",
+      reflectTmpOut,
+    ]);
+    for (const line of spirvCrossOut) {
+      process.stdout.write(`[spirvCross] ${line}`);
     }
+    const data = await readAsJson(reflectTmpOut, "utf-8");
+    console.log(
+      `tmp file contents: %s`,
+      JSON.stringify(data, null, 2)
+    );
   }
   const sprv = await readAsCppBytesArray(tmpOutput);
   sprvs.push({ identifier, sprv });
