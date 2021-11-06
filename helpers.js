@@ -34,17 +34,16 @@ const spawnChildProcess = (exe, args) =>
     proc.on("error", (err) => {
       reject(`failed to start subprocess: ${err}`);
     });
-    // proc.stdout.on("data", (data) => {
-    //   process.stdout.write(`[stdout] ${data}`);
-    // });
+    const output = [];
+    if (proc.stdout) {
+      proc.stdout.on("data", (data) => output.push(data));
+    }
     if (proc.stderr) {
-      proc.stderr.on("data", (data) => {
-        process.stderr.write(`[stderr] ${data}`);
-      });
+      proc.stderr.on("data", (data) => output.push(data));
     }
     proc.on("close", (code) => {
       if (code !== 0) {
-        reject(new Error(`process ${exe} exited with code ${code}`));
+        reject(new Error(`process ${exe} exited with code ${code}\noutput was: ${output.join('\n')}`));
       } else {
         // console.log(`process ${exe} exit ok!`);
         resolve();

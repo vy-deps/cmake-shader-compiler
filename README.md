@@ -24,22 +24,23 @@ if(NOT deps-spirv-generate_POPULATED)
 endif()
 ```
 
-And then, use macro `add_shaders` to make shaders build:
+And then, use macro `add_opengl_shaders`/`add_vulkan_shaders` to make shaders build:
 
 ```cmake
-add_shaders(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+add_opengl_shaders(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/opengl-shaders)
+add_vulkan_shaders(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-shaders)
 ```
 
 That's it!
 
-Now at build stage 2 files generated in directory `${CMAKE_CURRENT_SOURCE_DIR}/shaders`:
+Now at build stage 2 files generated in directory `opengl-shaders`/`vulkan-shaders`:
 
 ```
 shaders.cpp
 shaders.hpp
 ```
 
-Don't add it to cmake project sources, because macro `add_shaders` already does that.
+Don't add it to cmake project sources, because macro `add_opengl_shaders` already does that.
 
 Just include `shaders.hpp` in any file which needs shaders binary code, and use it!
 

@@ -38,10 +38,18 @@ function formatSpv(spv) {
 
 const sprvs = [];
 
-async function genSpirv(inputPath) {
+async function genSpirv(inputPath, type) {
+  let shaderTypeArg;
+  if (type === "Vulkan") {
+    shaderTypeArg = "-V";
+  } else if (type === "OpenGL") {
+    shaderTypeArg = "-G";
+  } else {
+    throw new Error(`unknown shader type ${type}`);
+  }
   const identifier = filenameToIdentifier(inputPath);
   const tmpOutput = tmpFile(".spv");
-  await spawnChildProcess(glslang, ["-g", "-G", inputPath, "-o", tmpOutput]);
+  await spawnChildProcess(glslang, ["-g", shaderTypeArg, inputPath, "-o", tmpOutput]);
   const sprv = await readAsCppBytesArray(tmpOutput);
   sprvs.push({ identifier, sprv });
   console.log(`spirv: ${inputPath} -> ${identifier}`);
@@ -79,10 +87,11 @@ ${shaders.map(({ impl }) => impl).join("\n\n")}
 }
 
 mainWrapper(async (args) => {
-  const dir = args[0];
-  const files = args.slice(1);
+  const type = args[0];
+  const dir = args[1];
+  const files = args.slice(2);
 
-  await withLimitNumCpu(files.map((file) => () => genSpirv(file)));
+  await withLimitNumCpu(files.map((file) => () => genSpirv(file, type)));
   await writeSpirv(dir);
 
   // for (const file of args) {
