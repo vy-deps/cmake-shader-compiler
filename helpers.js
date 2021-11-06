@@ -46,7 +46,7 @@ const spawnChildProcess = (exe, args) =>
         reject(new Error(`process ${exe} exited with code ${code}\noutput was: ${output.join('\n')}`));
       } else {
         // console.log(`process ${exe} exit ok!`);
-        resolve();
+        resolve(output);
       }
     });
   });

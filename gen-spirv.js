@@ -8,10 +8,22 @@ const {
   withLimitNumCpu,
 } = require("./helpers");
 const path = require("path");
+const fs = require("fs");
 
 const spvColumns = 16;
 const spvIndent = 2;
-const glslang = path.join(__dirname, resolveGlslangName());
+const glslang = path.join(resolveBinPath(), resolveGlslangName());
+const linter = resolveLinter();
+
+function resolveBinPath() {
+  if (process.env.VULKAN_SDK) {
+    const vulkanSDKPath = process.env.VULKAN_SDK;
+    if (fs.existsSync(vulkanSDKPath)) {
+      return vulkanSDKPath;
+    }
+  }
+  return __dirname;
+}
 
 function resolveGlslangName() {
   if (process.platform === "win32") {
@@ -21,6 +33,20 @@ function resolveGlslangName() {
   } else {
     throw new Error("not implemented for non win32/linux system");
   }
+}
+
+function resolveLinter() {
+  const tryPaths = [
+    path.join(resolveBinPath(), "spirv-lint"),
+    path.join(resolveBinPath(), "spirv-lint.exe"),
+  ];
+  for (const p of tryPaths) {
+    if (fs.existsSync(p)) {
+      console.log(`found linter ${p}`);
+      return p;
+    }
+  }
+  return null;
 }
 
 function formatSpv(spv) {
@@ -49,7 +75,19 @@ async function genSpirv(inputPath, type) {
   }
   const identifier = filenameToIdentifier(inputPath);
   const tmpOutput = tmpFile(".spv");
-  await spawnChildProcess(glslang, ["-g", shaderTypeArg, inputPath, "-o", tmpOutput]);
+  await spawnChildProcess(glslang, [
+    "-g",
+    shaderTypeArg,
+    inputPath,
+    "-o",
+    tmpOutput,
+  ]);
+  if (linter) {
+    const lintOut = await spawnChildProcess(linter, [tmpOutput]);
+    for (const line of lintOut) {
+      process.stdout.write(`[linter] ${line}`);
+    }
+  }
   const sprv = await readAsCppBytesArray(tmpOutput);
   sprvs.push({ identifier, sprv });
   console.log(`spirv: ${inputPath} -> ${identifier}`);
