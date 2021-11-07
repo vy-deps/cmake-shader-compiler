@@ -16,6 +16,19 @@ function cleanup() {
   }
 }
 
+function formatBytes(bytes, codeColumns = 16, codeIndent = 2) {
+  const lines = [];
+  for (let i = 0; i < bytes.length; i++) {
+    const lineIdx = Math.floor(i / codeColumns);
+    if (lines.length == lineIdx) {
+      lines.push("");
+    }
+    lines[lineIdx] += bytes[i] + ", ";
+  }
+  const indent = Array(codeIndent).fill(" ").join("");
+  return lines.map((x) => indent + x.trim()).join("\n");
+}
+
 function resolveTool({ name, isOptional }) {
   const binName = process.platform == "win32" ? name + ".exe" : name;
   const toolsDirs = [path.join(__dirname, "bin")];
@@ -171,6 +184,38 @@ async function runCPreprocessor(source) {
   });
 }
 
+async function writeShaders(shaders, dir, type) {
+  const definitions = [];
+
+  for (const { identifier, bytes } of shaders) {
+    const formatted = formatBytes(bytes);
+    definitions.push({
+      header: `  extern uint8_t g_${identifier}[ ${bytes.length} ];`,
+      impl: `uint8_t shaders::${type}::g_${identifier}[ ${bytes.length} ] = {
+${formatted}
+};`,
+    });
+  }
+
+  await writeFileStr(
+    path.join(dir, "shaders.hpp"),
+    `#pragma once
+#include <cstdint>
+
+namespace shaders::${type} {
+${definitions.map(({ header }) => header).join("\n")}
+} // namespace shaders::${type}
+`
+  );
+  await writeFileStr(
+    path.join(dir, "shaders.cpp"),
+    `#include \"shaders.hpp\"
+
+${definitions.map(({ impl }) => impl).join("\n\n")}
+`
+  );
+}
+
 async function withLimitNumCpu(jobs) {
   const limit = pLimit(os.cpus().length);
   const promises = jobs.map((job) => limit(job));
@@ -190,4 +235,6 @@ module.exports = {
   filenameToIdentifier,
   withLimitNumCpu,
   runCPreprocessor,
+  writeShaders,
+  formatBytes,
 };
