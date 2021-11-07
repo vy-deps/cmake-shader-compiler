@@ -16,6 +16,17 @@ const spvIndent = 2;
 const glslang = resolveVulkanTool({ name: "glslangValidator" });
 const spirvCross = resolveVulkanTool({ name: "spirv-cross", isOptional: true });
 
+const shaderTypes = {
+  Vulkan: {
+    arg: "-V",
+    name: "vk",
+  },
+  OpenGL: {
+    arg: "-G",
+    name: "gl",
+  },
+};
+
 function formatSpv(spv) {
   const lines = [];
   for (let i = 0; i < spv.length; i++) {
@@ -32,19 +43,11 @@ function formatSpv(spv) {
 const sprvs = [];
 
 async function genSpirv(inputPath, type) {
-  let shaderTypeArg;
-  if (type === "Vulkan") {
-    shaderTypeArg = "-V";
-  } else if (type === "OpenGL") {
-    shaderTypeArg = "-G";
-  } else {
-    throw new Error(`unknown shader type ${type}`);
-  }
   const identifier = filenameToIdentifier(inputPath);
   const tmpOutput = tmpFile(".spv");
   await spawnChildProcess(glslang, [
     "-g",
-    shaderTypeArg,
+    shaderTypes[type].arg,
     inputPath,
     "-o",
     tmpOutput,
@@ -68,13 +71,14 @@ async function genSpirv(inputPath, type) {
   console.log(`spirv: ${inputPath} -> ${identifier}`);
 }
 
-async function writeSpirv(dir) {
+async function writeSpirv(type, dir) {
   const shaders = [];
+  const namespace = shaderTypes[type].name;
   for (const { identifier, sprv } of sprvs) {
     const spirvFormatted = formatSpv(sprv);
     shaders.push({
       header: `  extern uint8_t g_${identifier}[ ${sprv.length} ];`,
-      impl: `uint8_t shaders::g_${identifier}[  ${sprv.length} ] = {
+      impl: `uint8_t shaders::${namespace}::g_${identifier}[  ${sprv.length} ] = {
 ${spirvFormatted}
 };`,
     });
@@ -84,9 +88,9 @@ ${spirvFormatted}
     `#pragma once
 #include <cstdint>
 
-namespace shaders {
+namespace shaders::${namespace} {
 ${shaders.map(({ header }) => header).join("\n")}
-} // namespace shaders
+} // namespace shaders::${namespace}
 `
   );
   await writeFileStr(
@@ -103,8 +107,12 @@ mainWrapper(async (args) => {
   const dir = args[1];
   const files = args.slice(2);
 
+  if (!Object.keys(shaderTypes).includes(type)) {
+    throw new Error(`unknown shader type ${type}`);
+  }
+
   await withLimitNumCpu(files.map((file) => () => genSpirv(file, type)));
-  await writeSpirv(dir);
+  await writeSpirv(type, dir);
 
   // for (const file of args) {
   //   await genSpirv(file, type);

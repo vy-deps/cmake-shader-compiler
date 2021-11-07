@@ -15,50 +15,62 @@ function(list_transform_add_ext var input extension)
   set(${var} "${temp}" PARENT_SCOPE)
 endfunction()
 
-macro(add_opengl_shaders project src_dir)
-  file(GLOB_RECURSE opengl_shader_files_in
-    ${src_dir}/*.frag
-    ${src_dir}/*.vert)
-  set(opengl_shader_files_out
-    ${src_dir}/shaders.hpp
-    ${src_dir}/shaders.cpp)
-  message("add_opengl_shaders(${project} ${src_dir})")
-  message("  in:  ${opengl_shader_files_in}")
-  message("  out: ${opengl_shader_files_out}")
+macro(add_gl_shaders project src_dir)
+  file(GLOB_RECURSE gl_shader_files_in ${src_dir}/*.frag ${src_dir}/*.vert)
+  set(gl_shader_files_out ${src_dir}/shaders.hpp ${src_dir}/shaders.cpp)
+  message("add_gl_shaders(${project} ${src_dir})")
+  message("  in:  ${gl_shader_files_in}")
+  message("  out: ${gl_shader_files_out}")
   add_custom_command(
     COMMAND ${spirv_nodejs_executable}
     ARGS
       ${spirv_generate_dir}/gen-spirv.js
-      OpenGL
+      gl
       ${src_dir}
-      ${opengl_shader_files_in}
-    OUTPUT ${opengl_shader_files_out}
+      ${gl_shader_files_in}
+    OUTPUT ${gl_shader_files_out}
     DEPENDS
       ${spirv_generate_dir}/gen-spirv.js
-      ${opengl_shader_files_in})
-  target_sources(${project} PRIVATE ${opengl_shader_files_out})
+      ${gl_shader_files_in})
+  target_sources(${project} PRIVATE ${gl_shader_files_out})
 endmacro()
 
-macro(add_vulkan_shaders project src_dir)
-  file(GLOB_RECURSE vulkan_shader_files_in
-    ${src_dir}/*.frag
-    ${src_dir}/*.vert)
-  set(vulkan_shader_files_out
-    ${src_dir}/shaders.hpp
-    ${src_dir}/shaders.cpp)
-  message("add_opengl_shaders(${project} ${src_dir})")
-  message("  in:  ${vulkan_shader_files_in}")
-  message("  out: ${vulkan_shader_files_out}")
+macro(add_vk_shaders project src_dir)
+  file(GLOB_RECURSE vk_shader_files_in ${src_dir}/*.frag ${src_dir}/*.vert)
+  set(vk_shader_files_out ${src_dir}/shaders.hpp ${src_dir}/shaders.cpp)
+  message("add_vk_shaders(${project} ${src_dir})")
+  message("  in:  ${vk_shader_files_in}")
+  message("  out: ${vk_shader_files_out}")
   add_custom_command(
     COMMAND ${spirv_nodejs_executable}
     ARGS
       ${spirv_generate_dir}/gen-spirv.js
       Vulkan
       ${src_dir}
-      ${vulkan_shader_files_in}
-    OUTPUT ${vulkan_shader_files_out}
+      ${vk_shader_files_in}
+    OUTPUT ${vk_shader_files_out}
     DEPENDS
       ${spirv_generate_dir}/gen-spirv.js
-      ${vulkan_shader_files_in})
-  target_sources(${project} PRIVATE ${vulkan_shader_files_out})
+      ${vk_shader_files_in})
+  target_sources(${project} PRIVATE ${vk_shader_files_out})
+endmacro()
+
+macro(add_dx_shaders project src_dir version)
+  file(GLOB_RECURSE dx_shader_files_in ${src_dir}/*.hlsl)
+  set(dx_shader_files_out ${src_dir}/shaders.hpp ${src_dir}/shaders.cpp)
+  message("add_dx_shaders(${project} ${src_dir})")
+  message("  in:  ${dx_shader_files_in}")
+  message("  out: ${dx_shader_files_out}")
+  add_custom_command(
+    COMMAND ${spirv_nodejs_executable}
+    ARGS
+      ${spirv_generate_dir}/gen-hlsl.js
+      ${version}
+      ${src_dir}
+      ${dx_shader_files_in}
+    OUTPUT ${dx_shader_files_out}
+    DEPENDS
+      ${spirv_generate_dir}/gen-spirv.js
+      ${dx_shader_files_in})
+  target_sources(${project} PRIVATE ${dx_shader_files_out})
 endmacro()

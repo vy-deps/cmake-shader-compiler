@@ -1,6 +1,6 @@
 # spirv-generate
 
-CMake stuff to generate spirv for shaders into shaders.cpp/hpp files.
+CMake stuff to generate glsl/hlsl object files for shaders and embed them into shaders.cpp/hpp files.
 
 ## Requirements
 
@@ -24,23 +24,24 @@ if(NOT deps-spirv-generate_POPULATED)
 endif()
 ```
 
-And then, use macro `add_opengl_shaders`/`add_vulkan_shaders` to make shaders build:
+And then, use macro `add_gl/vk/dx_shaders` to make shaders build:
 
 ```cmake
-add_opengl_shaders(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/opengl-shaders)
-add_vulkan_shaders(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-shaders)
+add_gl_shaders(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/gl-shaders)
+add_vk_shaders(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/vk-shaders)
+add_dx_shaders(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/dx-shaders)
 ```
 
 That's it!
 
-Now at build stage 2 files generated in directory `opengl-shaders`/`vulkan-shaders`:
+Now at build stage 2 files generated in **each** directory `gl-shaders`/`vk-shaders`/`dx-shaders`:
 
 ```
 shaders.cpp
 shaders.hpp
 ```
 
-Don't add it to cmake project sources, because macro `add_opengl_shaders`/`vulkan-shaders` already does that.
+Don't add it to cmake project sources, because macro `add_gl/vk/dx_shaders` already does that.
 Just include `shaders.hpp` in any file which needs shaders binary code, and use it!
 Also you might want to add these cpp/hpp files to your git ignore file.
 
