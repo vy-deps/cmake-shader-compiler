@@ -55,3 +55,4 @@ There is file `plimit.js` which contains 2 node packages contents:
 
 - [p-limit](https://www.npmjs.com/package/p-limit): licensed under MIT license, author: Sindre Sorhus
 - [yocto-queue](https://www.npmjs.com/package/yocto-queue): licensed under MIT license, author: Sindre Sorhus
+- [cpp.js](https://github.com/acgessler/cpp.js/): licensed under custom licensem, author: Alexander Christoph Gessler

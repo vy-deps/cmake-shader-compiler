@@ -3,7 +3,8 @@ const fsp = fs.promises;
 const os = require("os");
 const path = require("path");
 const childProcess = require("child_process");
-const { pLimit } = require("./plimit");
+const { pLimit } = require("./deps/plimit");
+const { cpp_js } = require("./deps/cpp");
 
 const cleanupFiles = [];
 
@@ -15,36 +16,35 @@ function cleanup() {
   }
 }
 
-let vulkanSdkPath = null;
+function resolveTool({ name, isOptional }) {
+  const binName = process.platform == "win32" ? name + ".exe" : name;
+  const toolsDirs = [path.join(__dirname, "bin")];
 
-function resolveVulkanTool({ name, isOptional }) {
-  if (!vulkanSdkPath) {
-    vulkanSdkPath = __dirname;
-    if (process.env.VULKAN_SDK) {
-      const vulkanBin = path.join(process.env.VULKAN_SDK, "Bin");
-      if (fs.existsSync(vulkanBin)) {
-        vulkanSdkPath = vulkanBin;
-      } else {
-        console.warn(
-          `VULKAN_SDK environment variable is set but not contains Bin path...`
-        );
-      }
+  if (process.env.VULKAN_SDK) {
+    const vulkanBin = path.join(process.env.VULKAN_SDK, "Bin");
+    if (fs.existsSync(vulkanBin)) {
+      toolsDirs.push(vulkanBin);
     } else {
-      console.warn(`VULKAN_SDK environment variable not set`);
+      console.warn(
+        `VULKAN_SDK environment variable is set but not contains Bin path...`
+      );
     }
+  } else {
+    console.warn(`VULKAN_SDK environment variable not set`);
   }
-  const tryPaths = [
-    path.join(vulkanSdkPath, name),
-    path.join(vulkanSdkPath, name + ".exe"),
-  ];
-  for (const p of tryPaths) {
+
+  for (const toolDir of toolsDirs) {
+    const p = path.join(toolDir, binName);
     if (fs.existsSync(p)) {
+      console.log(`found suitable tool ${p}`);
       return p;
     }
   }
+
   if (isOptional) {
     return null;
   }
+
   throw new Error(
     `vulkan tool ${name} not found! please install vulkan sdk or check environment variable VULKAN_SDK to be correct path!`
   );
@@ -92,6 +92,10 @@ const spawnChildProcess = (exe, args) =>
     });
   });
 
+async function readAsText(filepath) {
+  return fsp.readFile(filepath, "utf-8");
+}
+
 async function readAsCppBytesArray(filepath) {
   const buf = await fsp.readFile(filepath);
   const res = [];
@@ -129,6 +133,44 @@ function mainWrapper(func) {
     });
 }
 
+async function runCPreprocessor(source) {
+  return new Promise((resolve, reject) => {
+    const preprocessor = cpp_js({
+      // signal string that starts a preprocessor command,
+      // only honoured at the beginning of a line.
+      signal_char: "#",
+
+      // function used to print warnings, the default
+      // implementation logs to the console.
+      warn_func: null,
+
+      // function used to print critical errors, the default
+      // implementation logs to the console and throws.
+      error_func: null,
+
+      // function to be invoked to fetch include files.
+      // See the section "Handling include files" below.
+      include_func: (file, is_global, resumer, error) => {
+        // `is_global` is `true` if the file name was enclosed
+        // in < .. > rather than " .. ".
+        resumer(""); // ignore all includes
+      },
+
+      // function used to strip comments from the input file.
+      // The default implementation handles C and C++-style
+      // comments and also removes line continuations.
+      // Since this function is invoked on all files before
+      // any preprocessing happens, it can be thought of as a
+      // "preprocessor to the preprocessor".
+      // comment_stripper: null,
+
+      completion_func: resolve,
+    });
+
+    preprocessor.run(source);
+  });
+}
+
 async function withLimitNumCpu(jobs) {
   const limit = pLimit(os.cpus().length);
   const promises = jobs.map((job) => limit(job));
@@ -138,12 +180,14 @@ async function withLimitNumCpu(jobs) {
 module.exports = {
   cleanup,
   tmpFile,
-  resolveVulkanTool,
+  resolveTool,
   spawnChildProcess,
-  readAsJson,
-  mainWrapper,
   readAsCppBytesArray,
+  readAsJson,
+  readAsText,
+  mainWrapper,
   writeFileStr,
   filenameToIdentifier,
   withLimitNumCpu,
+  runCPreprocessor,
 };

@@ -70,7 +70,7 @@ macro(add_dx_shaders project src_dir version)
       ${dx_shader_files_in}
     OUTPUT ${dx_shader_files_out}
     DEPENDS
-      ${spirv_generate_dir}/gen-spirv.js
+      ${spirv_generate_dir}/gen-hlsl.js
       ${dx_shader_files_in})
   target_sources(${project} PRIVATE ${dx_shader_files_out})
 endmacro()

@@ -2,33 +2,55 @@ const {
   mainWrapper,
   tmpFile,
   spawnChildProcess,
-  readAsCppBytesArray,
-  readAsJson,
-  resolveVulkanTool,
+  resolveTool,
   writeFileStr,
   filenameToIdentifier,
   withLimitNumCpu,
+  readAsText,
+  runCPreprocessor,
 } = require("./helpers");
 const path = require("path");
 
-const csoColumns = 16;
-const csoIndent = 2;
-const dxc = resolveVulkanTool({ name: "dxc" });
+const fxc = resolveTool({ name: "fxc" });
+const dxc = resolveTool({ name: "dxc" });
 
 function formatCso(cso) {
-  const lines = [];
-  for (let i = 0; i < cso.length; i++) {
-    const lineIdx = Math.floor(i / csoColumns);
-    if (lines.length == lineIdx) {
-      lines.push("");
-    }
-    lines[lineIdx] += cso[i] + ", ";
-  }
-  const indent = Array(csoIndent).fill(" ").join("");
-  return lines.map((x) => indent + x.trim()).join("\n");
+  const startIndex = cso.indexOf("{") + 2;
+  const lastIndex = cso.lastIndexOf("}") - 1;
+  return cso.substring(startIndex, lastIndex);
 }
 
 const csos = [];
+
+async function compileNew(tmpOutput, inputPath, type) {
+  console.log("compiling with dxc");
+  await spawnChildProcess(dxc, [
+    "-Od", // Disable optimizations
+    "-Zi", // Enable debug information
+    "-Ges", // Enable strict mode
+    "-WX", // Treat warnings as errors
+    inputPath,
+    "-T",
+    type,
+    "-Fh",
+    tmpOutput,
+  ]);
+}
+
+async function compileOld(tmpOutput, inputPath, type) {
+  console.log("compiling with fxc");
+  await spawnChildProcess(fxc, [
+    "/Od", // Disable optimizations
+    "/Zi", // Enable debug information
+    "/Ges", // Enable strict mode
+    "/WX", // Treat warnings as errors
+    inputPath,
+    "/T",
+    type,
+    "/Fh",
+    tmpOutput,
+  ]);
+}
 
 async function genCso(inputPath, version) {
   const splitPath = inputPath.split(".");
@@ -43,29 +65,32 @@ async function genCso(inputPath, version) {
     splitPath[splitPath.length - 2] + "_" + version.replace(".", "_");
 
   const tmpOutput = tmpFile(".cso");
-  await spawnChildProcess(dxc, [
-    "-O0",
-    inputPath,
-    "-T",
-    type,
-    "-Fo",
-    tmpOutput,
-  ]);
-  const cso = await readAsCppBytesArray(tmpOutput);
+
+  if (+version > 5.5) {
+    await compileNew(tmpOutput, inputPath, type);
+  } else {
+    await compileOld(tmpOutput, inputPath, type);
+  }
+
+  const cso = await runCPreprocessor(await readAsText(tmpOutput));
   const identifier = filenameToIdentifier(
     inputPath.substr(0, inputPath.lastIndexOf("."))
   );
   csos.push({ identifier, cso });
-  console.log(`spirv: ${inputPath} -> ${identifier}`);
+  console.log(`cso: ${inputPath} -> ${identifier}`);
 }
 
 async function writeCso(dir) {
   const shaders = [];
   for (const { identifier, cso } of csos) {
     const formatted = formatCso(cso);
+    const size = formatted
+      .split(",")
+      .map((x) => x.trim())
+      .filter((x) => x.length).length;
     shaders.push({
-      header: `  extern uint8_t g_${identifier}[ ${cso.length} ];`,
-      impl: `uint8_t shaders::dx::g_${identifier}[  ${cso.length} ] = {
+      header: `  extern uint8_t g_${identifier}[ ${size} ];`,
+      impl: `uint8_t shaders::dx::g_${identifier}[ ${size} ] = {
 ${formatted}
 };`,
     });

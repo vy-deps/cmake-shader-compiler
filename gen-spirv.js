@@ -4,7 +4,7 @@ const {
   spawnChildProcess,
   readAsCppBytesArray,
   readAsJson,
-  resolveVulkanTool,
+  resolveTool,
   writeFileStr,
   filenameToIdentifier,
   withLimitNumCpu,
@@ -13,8 +13,8 @@ const path = require("path");
 
 const spvColumns = 16;
 const spvIndent = 2;
-const glslang = resolveVulkanTool({ name: "glslangValidator" });
-const spirvCross = resolveVulkanTool({ name: "spirv-cross", isOptional: true });
+const glslang = resolveTool({ name: "glslangValidator" });
+const spirvCross = resolveTool({ name: "spirv-cross", isOptional: true });
 
 const shaderTypes = {
   Vulkan: {
@@ -78,7 +78,7 @@ async function writeSpirv(type, dir) {
     const spirvFormatted = formatSpv(sprv);
     shaders.push({
       header: `  extern uint8_t g_${identifier}[ ${sprv.length} ];`,
-      impl: `uint8_t shaders::${namespace}::g_${identifier}[  ${sprv.length} ] = {
+      impl: `uint8_t shaders::${namespace}::g_${identifier}[ ${sprv.length} ] = {
 ${spirvFormatted}
 };`,
     });
