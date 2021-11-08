@@ -6,7 +6,7 @@ CMake stuff to generate glsl/hlsl object files for shaders and embed them into s
 
 ## Requirements
 
-Scripts require [nodejs](https://nodejs.org/en/download/) and [vulkan sdk](https://vulkan.lunarg.com/) to be installed.  
+Scripts require [nodejs](https://nodejs.org/en/download/) to be installed.  
 
 ## Usage
 
