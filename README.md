@@ -2,6 +2,8 @@
 
 CMake stuff to generate glsl/hlsl object files for shaders and embed them into shaders.cpp/hpp files.
 
+**Not ready for production**, but you can fork it and have fun tuning it for your purposes!
+
 ## Requirements
 
 Scripts require [nodejs](https://nodejs.org/en/download/) and [vulkan sdk](https://vulkan.lunarg.com/) to be installed.  
