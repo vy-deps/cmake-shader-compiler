@@ -1,6 +1,6 @@
-set(spirv_generate_dir ${CMAKE_CURRENT_LIST_DIR})
+set(csc_generate_dir ${CMAKE_CURRENT_LIST_DIR})
 
-find_program(spirv_nodejs_executable
+find_program(csc_nodejs_executable
   NAMES node nodejs
   HINTS $ENV{NODE_DIR}
   PATH_SUFFIXES bin
@@ -22,15 +22,16 @@ macro(add_gl_shaders project src_dir)
   message("  in:  ${gl_shader_files_in}")
   message("  out: ${gl_shader_files_out}")
   add_custom_command(
-    COMMAND ${spirv_nodejs_executable}
+    COMMAND ${csc_nodejs_executable}
     ARGS
-      ${spirv_generate_dir}/gen-spirv.js
+      ${csc_generate_dir}/gen-spirv.js
       gl
       ${src_dir}
       ${gl_shader_files_in}
     OUTPUT ${gl_shader_files_out}
     DEPENDS
-      ${spirv_generate_dir}/gen-spirv.js
+      ${csc_generate_dir}/gen-spirv.js
+      ${csc_generate_dir}/helpers.js
       ${gl_shader_files_in})
   target_sources(${project} PRIVATE ${gl_shader_files_out})
 endmacro()
@@ -42,15 +43,16 @@ macro(add_vk_shaders project src_dir)
   message("  in:  ${vk_shader_files_in}")
   message("  out: ${vk_shader_files_out}")
   add_custom_command(
-    COMMAND ${spirv_nodejs_executable}
+    COMMAND ${csc_nodejs_executable}
     ARGS
-      ${spirv_generate_dir}/gen-spirv.js
+      ${csc_generate_dir}/gen-spirv.js
       Vulkan
       ${src_dir}
       ${vk_shader_files_in}
     OUTPUT ${vk_shader_files_out}
     DEPENDS
-      ${spirv_generate_dir}/gen-spirv.js
+      ${csc_generate_dir}/gen-spirv.js
+      ${csc_generate_dir}/helpers.js
       ${vk_shader_files_in})
   target_sources(${project} PRIVATE ${vk_shader_files_out})
 endmacro()
@@ -62,15 +64,16 @@ macro(add_dx_shaders project src_dir version)
   message("  in:  ${dx_shader_files_in}")
   message("  out: ${dx_shader_files_out}")
   add_custom_command(
-    COMMAND ${spirv_nodejs_executable}
+    COMMAND ${csc_nodejs_executable}
     ARGS
-      ${spirv_generate_dir}/gen-hlsl.js
+      ${csc_generate_dir}/gen-hlsl.js
       ${version}
       ${src_dir}
       ${dx_shader_files_in}
     OUTPUT ${dx_shader_files_out}
     DEPENDS
-      ${spirv_generate_dir}/gen-hlsl.js
+      ${csc_generate_dir}/gen-hlsl.js
+      ${csc_generate_dir}/helpers.js
       ${dx_shader_files_in})
   target_sources(${project} PRIVATE ${dx_shader_files_out})
 endmacro()

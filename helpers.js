@@ -4,7 +4,6 @@ const os = require("os");
 const path = require("path");
 const childProcess = require("child_process");
 const { pLimit } = require("./deps/plimit");
-const { cpp_js } = require("./deps/cpp");
 
 const cleanupFiles = [];
 
@@ -146,44 +145,6 @@ function mainWrapper(func) {
     });
 }
 
-async function runCPreprocessor(source) {
-  return new Promise((resolve, reject) => {
-    const preprocessor = cpp_js({
-      // signal string that starts a preprocessor command,
-      // only honoured at the beginning of a line.
-      signal_char: "#",
-
-      // function used to print warnings, the default
-      // implementation logs to the console.
-      warn_func: null,
-
-      // function used to print critical errors, the default
-      // implementation logs to the console and throws.
-      error_func: null,
-
-      // function to be invoked to fetch include files.
-      // See the section "Handling include files" below.
-      include_func: (file, is_global, resumer, error) => {
-        // `is_global` is `true` if the file name was enclosed
-        // in < .. > rather than " .. ".
-        resumer(""); // ignore all includes
-      },
-
-      // function used to strip comments from the input file.
-      // The default implementation handles C and C++-style
-      // comments and also removes line continuations.
-      // Since this function is invoked on all files before
-      // any preprocessing happens, it can be thought of as a
-      // "preprocessor to the preprocessor".
-      // comment_stripper: null,
-
-      completion_func: resolve,
-    });
-
-    preprocessor.run(source);
-  });
-}
-
 async function writeShaders(shaders, dir, type) {
   const definitions = [];
 
@@ -234,7 +195,6 @@ module.exports = {
   writeFileStr,
   filenameToIdentifier,
   withLimitNumCpu,
-  runCPreprocessor,
   writeShaders,
   formatBytes,
 };

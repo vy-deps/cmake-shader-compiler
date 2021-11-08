@@ -1,4 +1,4 @@
-# spirv-generate
+# cmake-shader-compiler
 
 CMake stuff to generate glsl/hlsl object files for shaders and embed them into shaders.cpp/hpp files.
 
@@ -10,19 +10,19 @@ Scripts require [nodejs](https://nodejs.org/en/download/) and [vulkan sdk](https
 
 ## Usage
 
-Add these lines to your **CMakeLists.txt** to fetch latest version of **spirv-generate**:
+Add these lines to your **CMakeLists.txt** to fetch latest version of **cmake-shader-compiler**:
 
 ```cmake
 include(FetchContent)
 
-FetchContent_Declare(deps-spirv-generate
-  GIT_REPOSITORY https://github.com/cprkv/spirv-generate.git
+FetchContent_Declare(cmake-shader-compiler
+  GIT_REPOSITORY https://github.com/vy-deps/cmake-shader-compiler.git
   GIT_TAG master)
-FetchContent_GetProperties(deps-spirv-generate)
+FetchContent_GetProperties(cmake-shader-compiler)
 
-if(NOT deps-spirv-generate_POPULATED)
-  FetchContent_Populate(deps-spirv-generate)
-  include(${deps-spirv-generate_SOURCE_DIR}/add-shaders.cmake)
+if(NOT cmake-shader-compiler_POPULATED)
+  FetchContent_Populate(cmake-shader-compiler)
+  include(${cmake-shader-compiler_SOURCE_DIR}/add-shaders.cmake)
 endif()
 ```
 
@@ -57,4 +57,3 @@ There is file `plimit.js` which contains 2 node packages contents:
 
 - [p-limit](https://www.npmjs.com/package/p-limit): licensed under MIT license, author: Sindre Sorhus
 - [yocto-queue](https://www.npmjs.com/package/yocto-queue): licensed under MIT license, author: Sindre Sorhus
-- [cpp.js](https://github.com/acgessler/cpp.js/): licensed under custom licensem, author: Alexander Christoph Gessler
